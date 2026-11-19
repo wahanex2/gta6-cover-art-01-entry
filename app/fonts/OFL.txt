@@ -1,0 +1,13 @@
+Fonts vendored in this folder (offline, no CDN at runtime):
+
+- Anton-Regular.woff2 — Anton, Copyright 2020 The Anton Project Authors
+  (github.com/googlefonts/AntonFont). SIL Open Font License, Version 1.1.
+- Yellowtail-Regular.woff2 — Yellowtail, Copyright 2011 The Yellowtail Project
+  Authors (github.com/googlefonts/Yellowtail). SIL Open Font License,
+  Version 1.1.
+
+Both fonts are licensed under the SIL Open Font License 1.1, which allows use,
+study, modification and redistribution. The full licence text is available at
+openfontlicense.org (OFL-1.1). These are the latin subsets distributed by
+Google Fonts, downloaded once and stored locally so the app
+works fully offline.
