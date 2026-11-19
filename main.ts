@@ -1,40 +1,74 @@
-// A working gta6-cover-art-01 entry (Node 22, standard library only): the app is this directory's app/ folder, plain
-// static files a desktop browser loads offline (app/index.html and its ES modules, no library and no network
-// request), and the program hands it in. It copies app/ and screenshots/ from beside this file to /output and writes
-// /output/dossier.json, the summary the judge reads, with the vendored make.fun library. Only the plumbing, not the
-// cover art the bounty asks for: Cover Snap, a plain one-photo square cover with a sunset tint and a bold caption,
-// exported as a 1080 x 1080 PNG. Its two sample photos (app/samples/) were made for make.fun with an image model and
-// are free to use. Build your own GTA-style cover maker in its place, put your 3 or 4 PNG or JPEG screenshots in
-// screenshots/ (the first by name is the cover) and run it.
+// Neon Grid Cover Studio — entrypoint for make.fun's gta6-cover-art-01.
 //
-// Serve it locally with `node serve.ts`, then open http://localhost:8080.
-// Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
+// This program is the handoff between the repository and the judge. It takes
+// the finished cover-maker app (the static files under app/) and the four
+// screenshots under screenshots/, places both into the output directory the
+// grader provides, and asks the vendored make.fun helper to write the
+// dossier.json summary the judge reads.
+//
+// It runs on Node 22 with the standard library only: no packages, no
+// network, nothing fetched at runtime. Everything the app needs already
+// lives inside app/ (including the vendored fonts), so the copy below is
+// the whole delivery.
+//
+// How to run it by hand:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
+// Inside the grader the output directory is /output.
 
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
 
-const here = fileURLToPath(new URL('.', import.meta.url));
-const out = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
+// Directory holding this file; the app and its screenshots live beside it.
+const repoRoot = fileURLToPath(new URL('.', import.meta.url));
 
-mkdirSync(out, { recursive: true });
-cpSync(join(here, 'app'), join(out, 'app'), { recursive: true });
-mkdirSync(join(out, 'screenshots'), { recursive: true });
-if (existsSync(join(here, 'screenshots'))) cpSync(join(here, 'screenshots'), join(out, 'screenshots'), { recursive: true });
+// Where the finished package goes. The environment wins when it names a
+// directory (a relative name resolves against the working directory);
+// otherwise the grader's /output is used; if neither is available we fall
+// back to the repository directory itself.
+function pickOutputDir(): string {
+  const fromEnv = process.env.MAKEFUN_OUTPUT_DIR;
+  if (fromEnv !== undefined && fromEnv !== '') return resolve(fromEnv);
+  if (existsSync('/output')) return '/output';
+  return repoRoot;
+}
 
-// The scorer's own caps (reference/gate.json): only text_max_bytes shapes the bytes; the others refuse an entry the
-// scorer would refuse (more than 4 screenshots or one over 256 KiB; more than 993 files in app/ or 48 MiB of app
-// files, in all, or a path under app/ over 1000 bytes: app/ counts beside /output's own 1000-entry cap, its
-// screenshots/ and dossier.json).
-writeFileSync(
-  join(out, 'dossier.json'),
-  buildDossier(out, {
+// True when two paths name the same place on disk. Copying a folder onto
+// itself would fail, so the fallback case (output == repository) skips it.
+function isSameLocation(a: string, b: string): boolean {
+  return resolve(a) === resolve(b);
+}
+
+// Make sure a folder exists, then copy a whole tree into it when the
+// source exists and is not already the destination.
+function mirrorTree(source: string, target: string): void {
+  mkdirSync(target, { recursive: true });
+  if (!existsSync(source)) return;
+  if (isSameLocation(source, target)) return;
+  cpSync(source, target, { recursive: true });
+}
+
+// The caps the scorer enforces: at most four screenshots of at most 256 KiB
+// each, at most 993 files / 48 MiB inside app/, no app path longer than
+// 1000 bytes, and dossier text capped at 160 KiB. buildDossier refuses
+// anything over a cap instead of letting the scorer refuse the entry.
+function dossierLimits() {
+  return {
     text_max_bytes: 163840,
     screenshots: { max: 4, max_bytes: 262144 },
     app_max_files: 993,
     app_max_bytes: 50331648,
     app_path_max_bytes: 1000,
-  }),
-);
+  };
+}
+
+function main(): void {
+  const outDir = pickOutputDir();
+  mkdirSync(outDir, { recursive: true });
+  mirrorTree(join(repoRoot, 'app'), join(outDir, 'app'));
+  mirrorTree(join(repoRoot, 'screenshots'), join(outDir, 'screenshots'));
+  writeFileSync(join(outDir, 'dossier.json'), buildDossier(outDir, dossierLimits()));
+}
+
+main();
