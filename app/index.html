@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Grid Cover Studio — GTA-style cover maker</title>
+<link rel="stylesheet" href="./fonts.css">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">NG</span>
+    <div>
+      <h1>Neon Grid Cover Studio</h1>
+      <p>GTA-style multi-panel covers, made offline</p>
+    </div>
+  </div>
+  <p class="offline">100% offline · photos never leave this machine</p>
+</header>
+<main class="studio">
+  <aside class="rail">
+    <section>
+      <h2>1 · Photos</h2>
+      <div id="samples" class="samples" aria-label="Sample photos"></div>
+      <button id="upload-all" type="button" class="btn">Upload one photo for all</button>
+      <input id="upload-all-file" type="file" accept="image/*" hidden>
+      <div class="panel-controls">
+        <h3 id="panel-title">Panel: Hero</h3>
+        <label>Photo
+          <select id="panel-photo"></select>
+        </label>
+        <label>Upload a photo for this panel
+          <input id="panel-upload" type="file" accept="image/*">
+        </label>
+        <label>Grade
+          <select id="panel-grade"></select>
+        </label>
+        <label>Zoom
+          <input id="panel-zoom" type="range" min="100" max="250" value="100">
+        </label>
+        <label>Pan X
+          <input id="panel-panx" type="range" min="-100" max="100" value="0">
+        </label>
+        <label>Pan Y
+          <input id="panel-pany" type="range" min="-100" max="100" value="0">
+        </label>
+        <button id="fill-all" type="button" class="btn">Fill every panel with this photo</button>
+      </div>
+    </section>
+    <section>
+      <h2>2 · Layout</h2>
+      <div id="layouts" class="layout-thumbs" aria-label="Layouts"></div>
+    </section>
+    <section>
+      <h2>3 · Lettering</h2>
+      <label>Title (max 24)
+        <input id="title" type="text" maxlength="24" value="SUNSET CHASE">
+      </label>
+      <label>Tagline
+        <input id="tagline" type="text" value="every street is a stage">
+      </label>
+      <label>Kicker pill
+        <input id="kicker" type="text" value="★ SOLMAR BAY ★">
+      </label>
+      <label>Vol. line
+        <input id="vol" type="text" value="VOL. 06 — PALMS DISTRICT — EST. 1986">
+      </label>
+      <label>Edition tape
+        <input id="tape" type="text" value="COLLECTORS EDITION">
+      </label>
+      <label>Stars
+        <select id="stars">
+          <option value="0">0 stars</option>
+          <option value="1">1 star</option>
+          <option value="2">2 stars</option>
+          <option value="3">3 stars</option>
+          <option value="4">4 stars</option>
+          <option value="5" selected>5 stars</option>
+        </select>
+      </label>
+      <label class="check"><input id="starburst" type="checkbox" checked> EST. 2026 starburst badge</label>
+      <label class="check"><input id="show-new" type="checkbox" checked> NEW badge</label>
+    </section>
+    <section>
+      <h2>4 · Grade</h2>
+      <div id="grades" class="grade-swatches" aria-label="Colour grades"></div>
+      <label>Print finish
+        <select id="finish">
+          <option value="none" selected>None</option>
+          <option value="halftone">Halftone dots</option>
+          <option value="posterize">Posterize</option>
+        </select>
+      </label>
+      <label>Finish strength
+        <input id="finish-strength" type="range" min="0" max="100" value="70">
+      </label>
+      <label>Frame
+        <select id="frame">
+          <option value="dark" selected>Dark</option>
+          <option value="light">Light</option>
+          <option value="none">None</option>
+        </select>
+      </label>
+    </section>
+    <section>
+      <h2>5 · Export</h2>
+      <div class="size-toggle" id="size-toggle">
+        <button type="button" data-size="square" class="on">Square 1080×1080</button>
+        <button type="button" data-size="portrait">Portrait 1080×1350</button>
+        <button type="button" data-size="wide">Wide 1920×1080</button>
+      </div>
+      <button id="export" type="button" class="export-btn">Export PNG</button>
+      <p class="hint">One click — the cover re-renders at the exact post size and downloads as a PNG.</p>
+    </section>
+  </aside>
+  <section class="stage">
+    <div class="canvas-wrap">
+      <canvas id="cover" width="720" height="720" aria-label="The cover"></canvas>
+    </div>
+    <p id="status" class="status" role="status">Panel: Hero — drag to pan · scroll to zoom · drop a photo here</p>
+  </section>
+</main>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

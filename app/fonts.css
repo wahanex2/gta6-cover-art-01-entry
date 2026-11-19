@@ -1,0 +1,18 @@
+/* Vendored display fonts (offline — no CDN). Both are SIL Open Font License 1.1.
+   Anton-Regular.woff2 (latin subset) and Yellowtail-Regular.woff2 (latin subset)
+   were fetched from the Google Fonts distribution (fonts.gstatic.com) and stored
+   locally under app/fonts/. Licence notes: app/fonts/OFL.txt */
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/Anton-Regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Yellowtail';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./fonts/Yellowtail-Regular.woff2') format('woff2');
+}
