@@ -1,74 +1,67 @@
-// Neon Grid Cover Studio — entrypoint for make.fun's gta6-cover-art-01.
+// Neon Grid Cover Studio — the program the grader runs (gta6-cover-art-01).
 //
-// This program is the handoff between the repository and the judge. It takes
-// the finished cover-maker app (the static files under app/) and the four
-// screenshots under screenshots/, places both into the output directory the
-// grader provides, and asks the vendored make.fun helper to write the
-// dossier.json summary the judge reads.
+// The app itself is a folder of static files (app/) plus four screenshots
+// (screenshots/). This file is the courier: it puts both folders into the
+// output directory the grader hands it and then asks the vendored make.fun
+// helper to write dossier.json, the summary the judge reads.
 //
-// It runs on Node 22 with the standard library only: no packages, no
-// network, nothing fetched at runtime. Everything the app needs already
-// lives inside app/ (including the vendored fonts), so the copy below is
-// the whole delivery.
-//
-// How to run it by hand:
+// Node 22, standard library only — nothing to install, nothing fetched, no
+// network at any point. Run it by hand with:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
-// Inside the grader the output directory is /output.
 
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-app.ts';
 
-// Directory holding this file; the app and its screenshots live beside it.
-const repoRoot = fileURLToPath(new URL('.', import.meta.url));
+// The folder this file sits in; app/ and screenshots/ are its neighbours.
+const here = fileURLToPath(new URL('.', import.meta.url));
 
-// Where the finished package goes. The environment wins when it names a
-// directory (a relative name resolves against the working directory);
-// otherwise the grader's /output is used; if neither is available we fall
-// back to the repository directory itself.
-function pickOutputDir(): string {
-  const fromEnv = process.env.MAKEFUN_OUTPUT_DIR;
-  if (fromEnv !== undefined && fromEnv !== '') return resolve(fromEnv);
+// Decide where the package goes. The environment variable wins (a relative
+// value is read against the working directory); then the grader's /output
+// when it exists; otherwise the repository folder itself, which makes the
+// copy a no-op for the two trees (see samePlace below).
+function resolveOutDir(): string {
+  const named = process.env.MAKEFUN_OUTPUT_DIR?.trim();
+  if (named !== undefined && named !== '') return resolve(named);
   if (existsSync('/output')) return '/output';
-  return repoRoot;
+  return here;
 }
 
-// True when two paths name the same place on disk. Copying a folder onto
-// itself would fail, so the fallback case (output == repository) skips it.
-function isSameLocation(a: string, b: string): boolean {
+// Two spellings of one place on disk. The repository fallback makes the
+// output directory equal the source, and copying a tree onto itself is an
+// error, so the copy step checks this first.
+function samePlace(a: string, b: string): boolean {
   return resolve(a) === resolve(b);
 }
 
-// Make sure a folder exists, then copy a whole tree into it when the
-// source exists and is not already the destination.
-function mirrorTree(source: string, target: string): void {
-  mkdirSync(target, { recursive: true });
-  if (!existsSync(source)) return;
-  if (isSameLocation(source, target)) return;
-  cpSync(source, target, { recursive: true });
+// Create the destination, then copy a whole tree into it — unless the source
+// is missing (nothing to copy) or is already the destination.
+function copyTree(from: string, to: string): void {
+  mkdirSync(to, { recursive: true });
+  if (!existsSync(from)) return;
+  if (samePlace(from, to)) return;
+  cpSync(from, to, { recursive: true });
 }
 
-// The caps the scorer enforces: at most four screenshots of at most 256 KiB
-// each, at most 993 files / 48 MiB inside app/, no app path longer than
-// 1000 bytes, and dossier text capped at 160 KiB. buildDossier refuses
-// anything over a cap instead of letting the scorer refuse the entry.
-function dossierLimits() {
-  return {
-    text_max_bytes: 163840,
-    screenshots: { max: 4, max_bytes: 262144 },
-    app_max_files: 993,
-    app_max_bytes: 50331648,
-    app_path_max_bytes: 1000,
-  };
+// The caps the scorer enforces, passed straight through so this program
+// refuses exactly where the scorer would: dossier text at most 160 KiB,
+// four screenshots at most 256 KiB each, app/ at most 993 entries and
+// 48 MiB, no app path longer than 1000 bytes.
+const CAPS = {
+  text_max_bytes: 163840,
+  screenshots: { max: 4, max_bytes: 262144 },
+  app_max_files: 993,
+  app_max_bytes: 50331648,
+  app_path_max_bytes: 1000,
+};
+
+function run(): void {
+  const out = resolveOutDir();
+  mkdirSync(out, { recursive: true });
+  copyTree(join(here, 'app'), join(out, 'app'));
+  copyTree(join(here, 'screenshots'), join(out, 'screenshots'));
+  writeFileSync(join(out, 'dossier.json'), buildDossier(out, CAPS));
 }
 
-function main(): void {
-  const outDir = pickOutputDir();
-  mkdirSync(outDir, { recursive: true });
-  mirrorTree(join(repoRoot, 'app'), join(outDir, 'app'));
-  mirrorTree(join(repoRoot, 'screenshots'), join(outDir, 'screenshots'));
-  writeFileSync(join(outDir, 'dossier.json'), buildDossier(outDir, dossierLimits()));
-}
-
-main();
+run();
